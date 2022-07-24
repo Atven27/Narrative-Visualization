@@ -1,0 +1,31 @@
+circle {
+    fill: lightblue; 
+    stroke: black;
+}
+
+svg {
+    background-color: rgb(231, 231, 233);
+    font-family: 'Lato';
+    margin: 1em 2em;
+}
+
+h1 {
+    margin: 1em;
+}
+
+body {
+    background-color: rgb(212, 230, 236);
+    font-family: "Times New Roman", Times, serif;
+}
+
+rect {
+    fill: lightblue; stroke: black; 
+}
+
+.annotation-group, text.title {
+    font-size: 1em;
+}
+
+label {
+    margin-left: 2em;
+}

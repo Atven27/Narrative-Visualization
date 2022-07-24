@@ -1,10 +1,192 @@
 <!DOCTYPE html>
 <html lang="en">
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3-annotation/2.5.1/d3-annotation.min.js"></script>
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>2017 Automobile Fuel Efficiency Narrative Visualization</title>
+    <link href="page.css" type="text/css" rel="stylesheet" />
 </head>
-<body>
-    <p>This is a paragraph</p>
+<style> circle {fill: lightblue; stroke: black;} </style>
+<body onload="init()">
+<h1>2017 Automobile Fuel Efficiency Narrative Visualization</h1><br/>
+<label for="select_scene">Select a scene: </label>
+<input type="range" min=1 max=3 step=1 id="select_scene" value=1 >
+<output name="selected_scene" id="selected_scene">Scene 1</output>
+<svg width=1800 height=800>
+    
+</svg>
+
+<script>
+async function init() {
+    
+    const data = await d3.csv("cars2017.csv");
+    const cylinders = [0,2,3,4,6,8,10,12]
+    
+    // Setup dictionary for the different cylinder numbers of each car
+    var dict = {}
+    cylinders.forEach(function (item,index) {
+        cyl = {}
+        cyl["count"] = 0
+        cyl["avgHighMPG"] = 0
+        cyl["avgCityMPG"] = 0
+        dict[item] = cyl
+    });
+
+    // Populate dictionary with number of cars with that number cylinder, avg highwaympg for that cylinder, and avg city mpg for that cylinder
+    for (i=0; i < data.length; i++) {
+        
+        c = Number(data[i].EngineCylinders)
+        himpg = Number(data[i].AverageHighwayMPG)
+        cimpg = Number(data[i].AverageCityMPG)
+
+        dict[c]["count"] += 1 
+        dict[c]["avgHighMPG"] += himpg
+        dict[c]["avgCityMPG"] += cimpg
+         
+    }
+    
+    cylinders.forEach(function (item,index) {
+        dict[item]["avgHighMPG"] = (dict[item]["avgHighMPG"] / dict[item]["count"]).toFixed(2)
+        dict[item]["avgCityMPG"] = (dict[item]["avgCityMPG"] / dict[item]["count"]).toFixed(2)
+    });
+    
+    console.log(dict)
+    
+    const annotations = [
+        {   
+            type: d3.annotationCallout,
+            note: {
+                label: "Cars with zero cylinders are electric",
+                title: "Electric",
+                wrap: 300,
+                bgPadding: {"top":0.5,"left":1,"right":1,"bottom":1}
+                
+            },
+            
+            x: 180,
+            y: 680,
+            dy: 40,
+            dx: 10,
+            
+
+        }
+    ].map(function(d){ d.color = "black"; return d})
+
+    const makeAnnotations = d3.annotation()
+                .type(d3.annotationLabel)
+                .annotations(annotations)
+
+
+    d3.select("svg")
+    .append("g")
+    .attr("class", "annotation-group")
+    .call(makeAnnotations)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    // Chart 1
+    var x = d3.scaleBand().domain([0,1,2,3,4,5,6,7]).range([0,1700])
+    var y = d3.scaleLinear().domain([10,150]).range([600,0])
+
+    var dlist = Object.entries(dict);
+    console.log(dlist)
+    
+    d3.select("svg")
+    .append("g")
+    .attr("transform","translate(70,50)")
+    .selectAll('rect')
+    .data(dlist)
+    .enter()
+    .append('rect')
+    .attr('x', function(d,i) {return x(i);})
+    .attr('y', function(d,i) {return y(d[1].avgHighMPG);})
+    .attr('width', x.bandwidth())
+    .attr('height',function(d,i) {return 600 - y(d[1].avgHighMPG);});
+
+    d3.select('svg')
+    .append("g")
+    .attr("transform","translate(70,50)")
+    .call(d3.axisLeft(y).tickFormat(d3.format("~s")));
+    
+    d3.select('svg')
+    .append("g")
+    .attr("transform","translate(70,650)")
+    .call(d3.axisBottom(x).tickFormat(function(d,i){ return cylinders[i]}));
+
+    // Learned how to create axis titles: https://d3-graph-gallery.com/graph/custom_axis.html
+    d3.select("svg").append("text")
+    .attr("text-anchor", "end")
+    .attr("x", 1000)
+    .attr("y", 700)
+    .style('fill', 'Black')
+    .style('font-weight', 'bold')
+    .text("Engine Cylinder Count")
+
+    d3.select("svg").append("text")
+    .attr("text-anchor", "end")
+    .attr("x", -200)
+    .attr("y", 15)
+    .attr("dy", ".25em")
+    .style('fill', 'Black')
+    .style('font-weight', 'bold')
+    .attr("transform", "rotate(-90)")
+    .text("Average Highway MPG");
+
+    console.log(data);
+}   
+</script>
 </body>
 </html>
