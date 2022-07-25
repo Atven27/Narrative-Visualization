@@ -11,15 +11,16 @@
 <body onload="init()">
 <h1>2017 Automobile Fuel Efficiency Narrative Visualization</h1><br/>
 <label for="select_scene">Select a scene: </label>
-<input type="range" min=1 max=3 step=1 id="select_scene" value=1 >
-<output name="selected_scene" id="selected_scene">Scene 1</output>
+
+<button id="scene1_btn">Scene 1</button>
+<button id="scene2_btn">Scene 2</button>
 <svg width=1800 height=800>
     
 </svg>
 
 <script>
 async function init() {
-    
+
     const data = await d3.csv("cars2017.csv");
     const cylinders = [0,2,3,4,6,8,10,12]
     
@@ -74,55 +75,17 @@ async function init() {
     ].map(function(d){ d.color = "black"; return d})
 
     const makeAnnotations = d3.annotation()
-                .type(d3.annotationLabel)
-                .annotations(annotations)
+        .type(d3.annotationLabel)
+        .annotations(annotations)
 
 
-    d3.select("svg")
-    .append("g")
-    .attr("class", "annotation-group")
-    .call(makeAnnotations)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    function draw_barchart_annotations() {
+        d3.select("svg")
+        .append("g")
+        .attr("class", "annotation-group")
+        .call(makeAnnotations)
+    }
+        
 
 
 
@@ -140,52 +103,125 @@ async function init() {
     // Chart 1
     var x = d3.scaleBand().domain([0,1,2,3,4,5,6,7]).range([0,1700])
     var y = d3.scaleLinear().domain([10,150]).range([600,0])
-
     var dlist = Object.entries(dict);
-    console.log(dlist)
+ 
+
+    function draw_axis(scene) {
+        let x_axis_title;
+        let y_axis_title;
+
+        if (scene == 1) {
+            y_axis_title = "Average Highway MPG"
+        }
+        else if (scene == 2) {
+            y_axis_title = "Average City MPG"
+        }
+        else {
+
+        }
+        
+        d3.select('svg')
+        .append("g")
+        .attr("transform","translate(70,50)")
+        .call(d3.axisLeft(y).tickFormat(d3.format("~s")));
+        
+        d3.select('svg')
+        .append("g")
+        .attr("transform","translate(70,650)")
+        .call(d3.axisBottom(x).tickFormat(function(d,i){ return cylinders[i]}));
+
+        // Learned how to create axis titles: https://d3-graph-gallery.com/graph/custom_axis.html
+        d3.select("svg").append("text")
+        .attr("text-anchor", "end")
+        .attr("x", 1000)
+        .attr("y", 700)
+        .style('fill', 'Black')
+        .style('font-weight', 'bold')
+        .text("Engine Cylinder Count")
+
+        d3.select("svg").append("text")
+        .attr("text-anchor", "end")
+        .attr("x", -200)
+        .attr("y", 15)
+        .attr("dy", ".25em")
+        .style('fill', 'Black')
+        .style('font-weight', 'bold')
+        .attr("transform", "rotate(-90)")
+        .text(y_axis_title);
+    }
     
-    d3.select("svg")
-    .append("g")
-    .attr("transform","translate(70,50)")
-    .selectAll('rect')
-    .data(dlist)
-    .enter()
-    .append('rect')
-    .attr('x', function(d,i) {return x(i);})
-    .attr('y', function(d,i) {return y(d[1].avgHighMPG);})
-    .attr('width', x.bandwidth())
-    .attr('height',function(d,i) {return 600 - y(d[1].avgHighMPG);});
 
-    d3.select('svg')
-    .append("g")
-    .attr("transform","translate(70,50)")
-    .call(d3.axisLeft(y).tickFormat(d3.format("~s")));
+
+
+
+
+
+    function update_scene(scene) {
+        d3.select("svg").html("");
+        
+        var svg = d3.select("svg")
+        .append("g")
+        .attr("transform","translate(70,50)");
+        
+        if (scene == 1) {
+            console.log("here1")
+            svg.selectAll('rect')
+            .data(dlist)
+            .enter()
+            .append('rect')
+            .attr('x', function(d,i) {return x(i);})
+            .attr('y', function(d,i) {return y(d[1].avgHighMPG);})
+            .attr('width', x.bandwidth())
+            .attr('height',function(d,i) {return 600 - y(d[1].avgHighMPG);})
+            draw_barchart_annotations()
+        }
+        else if (scene == 2) {
+            console.log("here2")
+            svg.selectAll('rect')
+            .data(dlist)
+            .enter()
+            .append('rect')
+            .attr('x', function(d,i) {return x(i);})
+            .attr('y', function(d,i) {return y(d[1].avgCityMPG);})
+            .attr('width', x.bandwidth())
+            .attr('height',function(d,i) {return 600 - y(d[1].avgCityMPG);})
+            draw_barchart_annotations()
+            
+            
+        }
+        draw_axis(scene);
+    }
+
+
+
+    update_scene(1);
+
+
+    var btn1 = d3.select("#scene1_btn");
+    btn1.on("click", function() {  
+        update_scene(1);
+    });
+
+    var btn2 = d3.select("#scene2_btn");
+    btn2.on("click", function() {
+        update_scene(2);
+    });
+
     
-    d3.select('svg')
-    .append("g")
-    .attr("transform","translate(70,650)")
-    .call(d3.axisBottom(x).tickFormat(function(d,i){ return cylinders[i]}));
-
-    // Learned how to create axis titles: https://d3-graph-gallery.com/graph/custom_axis.html
-    d3.select("svg").append("text")
-    .attr("text-anchor", "end")
-    .attr("x", 1000)
-    .attr("y", 700)
-    .style('fill', 'Black')
-    .style('font-weight', 'bold')
-    .text("Engine Cylinder Count")
-
-    d3.select("svg").append("text")
-    .attr("text-anchor", "end")
-    .attr("x", -200)
-    .attr("y", 15)
-    .attr("dy", ".25em")
-    .style('fill', 'Black')
-    .style('font-weight', 'bold')
-    .attr("transform", "rotate(-90)")
-    .text("Average Highway MPG");
-
-    console.log(data);
+    // svg.selectAll('rect')
+    // .data(dlist)
+    // .enter()
+    // .append('rect')
+    // .attr('x', function(d,i) {return x(i);})
+    // .attr('y', function(d,i) {return y(d[1].avgHighMPG);})
+    // .attr('width', x.bandwidth())
+    // .attr('height',function(d,i) {return 600 - y(d[1].avgHighMPG);})
+    // .transition().duration(3000).delay(1000)
+    // .attr('y', function(d,i) {return y(d[1].avgCityMPG);})
+    // .attr('height',function(d,i) {return 600 - y(d[1].avgCityMPG);})
+    // .transition().duration(3000).delay(1000)
+    // .attr('y', function(d,i) {return y(d[1].avgHighMPG);})
+    // .attr('height',function(d,i) {return 600 - y(d[1].avgHighMPG);});
 }   
 </script>
 </body>
