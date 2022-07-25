@@ -10,10 +10,13 @@
 <style> circle {fill: lightblue; stroke: black;} </style>
 <body onload="init()">
 <h1>2017 Automobile Fuel Efficiency Narrative Visualization</h1><br/>
-<label for="select_scene">Select a scene: </label>
+<label for="select_scene">Select a chart: </label>
 
-<button id="scene1_btn">Scene 1</button>
-<button id="scene2_btn">Scene 2</button>
+<button id="scene1_btn">Chart 1</button>
+<button id="scene2_btn">Chart 2</button>
+<button id="scene3_btn">Chart 3</button>
+<span></span>
+<p>Hover over data points to see more information</p>
 <svg width=1800 height=800>
     
 </svg>
@@ -54,7 +57,12 @@ async function init() {
     
     console.log(dict)
     
-    const annotations = [
+
+
+
+    function draw_chart1_annotations() {
+
+        const annotations1 = [
         {   
             type: d3.annotationCallout,
             note: {
@@ -71,15 +79,32 @@ async function init() {
             dx: 10,
             
 
-        }
-    ].map(function(d){ d.color = "black"; return d})
+        },
+        {
+            type: d3.annotationCalloutElbow,
+            note: {
+                label: "As the number of cylinders increase both the city and highway mpg seems to decrease",
+                title: "General Trend",
+                wrap: 300,
+                bgPadding: {"top":0.5,"left":1,"right":1,"bottom":0.5}
+                
+            },
+            subject: {
+                x1: 840,
+                x2: 1200
+            },
+            
+            x: 900,
+            y: 450,
+            dy: -20,
+            dx: 40,
+        }].map(function(d){ d.color = "black"; return d})
 
-    const makeAnnotations = d3.annotation()
+
+        const makeAnnotations = d3.annotation()
         .type(d3.annotationLabel)
-        .annotations(annotations)
+        .annotations(annotations1)
 
-
-    function draw_barchart_annotations() {
         d3.select("svg")
         .append("g")
         .attr("class", "annotation-group")
@@ -100,11 +125,14 @@ async function init() {
 
 
 
-    // Chart 1
+    // Chart 1 & 2
     var x = d3.scaleBand().domain([0,1,2,3,4,5,6,7]).range([0,1700])
     var y = d3.scaleLinear().domain([10,150]).range([600,0])
     var dlist = Object.entries(dict);
- 
+    
+    // Chart 3
+    var scatter_x = d3.scaleLinear().domain([10,150]).range([0,1700])
+    var scatter_y = d3.scaleLinear().domain([10,150]).range([600,0])
 
     function draw_axis(scene) {
         let x_axis_title;
@@ -115,9 +143,6 @@ async function init() {
         }
         else if (scene == 2) {
             y_axis_title = "Average City MPG"
-        }
-        else {
-
         }
         
         d3.select('svg')
@@ -150,13 +175,45 @@ async function init() {
         .text(y_axis_title);
     }
     
+    function draw_scatter_axis() {
+        d3.select('svg')
+        .append("g")
+        .attr("transform","translate(70,50)")
+        .call(d3.axisLeft(scatter_y).tickFormat(d3.format("~s")));
+        
+        d3.select('svg')
+        .append("g")
+        .attr("transform","translate(70,650)")
+        .call(d3.axisBottom(scatter_x).tickFormat(d3.format("~s")));
 
+        d3.select("svg").append("text")
+        .attr("text-anchor", "end")
+        .attr("x", 1000)
+        .attr("y", 700)
+        .style('fill', 'Black')
+        .style('font-weight', 'bold')
+        .text("Average City MPG")
 
+        d3.select("svg").append("text")
+        .attr("text-anchor", "end")
+        .attr("x", -200)
+        .attr("y", 15)
+        .attr("dy", ".25em")
+        .style('fill', 'Black')
+        .style('font-weight', 'bold')
+        .attr("transform", "rotate(-90)")
+        .text("Average Highway MPG");
+    }
 
+    // Define the div for the tooltip
+    var tooltip = d3.select("body").append("div")
+    .attr("class", "tooltip")
+    .style("opacity", 0);
 
 
 
     function update_scene(scene) {
+        d3.select("span").html("Chart " + scene + " selected")
         d3.select("svg").html("");
         
         var svg = d3.select("svg")
@@ -164,7 +221,6 @@ async function init() {
         .attr("transform","translate(70,50)");
         
         if (scene == 1) {
-            console.log("here1")
             svg.selectAll('rect')
             .data(dlist)
             .enter()
@@ -173,10 +229,39 @@ async function init() {
             .attr('y', function(d,i) {return y(d[1].avgHighMPG);})
             .attr('width', x.bandwidth())
             .attr('height',function(d,i) {return 600 - y(d[1].avgHighMPG);})
-            draw_barchart_annotations()
+            // Had help setting up tooltips from here: https://bl.ocks.org/d3noob/a22c42db65eb00d4e369
+            .on("mouseover", function(index, data) {
+             
+                d3.select(this).transition()
+               .duration('50')
+               .attr('opacity', '.5');
+
+                tooltip.transition()
+                .duration(200)
+                .style("opacity", 0.9);
+                tooltip.html(
+                    "Average Highway MPG: " + data[1].avgHighMPG
+                    + "<br/> Number of cars: " + data[1].count
+                    )
+                .style("left", (event.pageX) + "px")
+                .style("top", (event.pageY - 28) + "px");
+            })
+            
+            .on("mouseout", function(d) {
+                
+                d3.select(this).transition()
+               .duration('50')
+               .attr('opacity', '1');
+
+                tooltip.transition()
+                .duration(200)
+                .style("opacity", 0);
+            });
+            draw_chart1_annotations();
+            draw_axis(scene);
         }
+
         else if (scene == 2) {
-            console.log("here2")
             svg.selectAll('rect')
             .data(dlist)
             .enter()
@@ -185,16 +270,94 @@ async function init() {
             .attr('y', function(d,i) {return y(d[1].avgCityMPG);})
             .attr('width', x.bandwidth())
             .attr('height',function(d,i) {return 600 - y(d[1].avgCityMPG);})
-            draw_barchart_annotations()
+            .on("mouseover", function(index, data) {
+                
+                d3.select(this).transition()
+               .duration('50')
+               .attr('opacity', '.5');
+
+                tooltip.transition()
+                .duration(200)
+                .style("opacity", 0.9);
+                tooltip.html(
+                    "Average City MPG: " + data[1].avgCityMPG
+                    + "<br/> Number of cars: " + data[1].count
+                    )
+                .style("left", (event.pageX) + "px")
+                .style("top", (event.pageY - 28) + "px");
+            })
             
-            
+            .on("mouseout", function(d) {
+                
+                d3.select(this).transition()
+               .duration('50')
+               .attr('opacity', '1');
+
+                tooltip.transition()
+                .duration(200)
+                .style("opacity", 0);
+            });
+            draw_chart1_annotations();
+            draw_axis(scene);
+                
         }
-        draw_axis(scene);
+        else { 
+            svg.selectAll('circle')
+            .data(data)
+            .enter()
+            .append('circle')
+            .attr('cx', function(d,i) {return scatter_x(d.AverageCityMPG);})
+            .attr('cy', function(d,i) {return scatter_y(d.AverageHighwayMPG);})
+            .attr('r', function(d,i) { return Number(d.EngineCylinders) + 5;})
+            .on("mouseover", function(index, data) {
+                
+                d3.select(this).transition()
+               .duration('50')
+               .attr('opacity', '.5');
+
+                tooltip.transition()
+                .duration(200)
+                .style("opacity", 0.9);
+                tooltip.html(
+                    "Avg. City MPG: " + data.AverageCityMPG 
+                    + "<br/> Avg. Highway MPG: " + data.AverageHighwayMPG 
+                    + "<br/> Fuel Type: " + data.Fuel
+                    + "<br/> Cylinders: " + data.EngineCylinders
+                    + "<br/> Make: " + data.Make
+                    )
+                .style("left", (event.pageX) + "px")
+                .style("top", (event.pageY - 28) + "px");
+            })
+            
+            .on("mouseout", function(d) {
+                
+                d3.select(this).transition()
+               .duration('50')
+               .attr('opacity', '1');
+
+                tooltip.transition()
+                .duration(200)
+                .style("opacity", 0);
+            });
+
+            svg.append('line')
+            .style("stroke", "lightgrey")
+            .style("stroke-width", 5)
+            .style("stroke-dasharray", ("8, 8"))
+            .style("opacity", 0.5)
+            .attr("x1", 0)
+            .attr("y1", 600)
+            .attr("x2", 1700)
+            .attr("y2", 0); 
+            
+            draw_scatter_axis();
+        }
+        
     }
 
 
 
-    update_scene(1);
+    update_scene(3);
 
 
     var btn1 = d3.select("#scene1_btn");
@@ -207,21 +370,12 @@ async function init() {
         update_scene(2);
     });
 
+    var btn3 = d3.select("#scene3_btn");
+    btn3.on("click", function() {
+        update_scene(3);
+    });
+
     
-    // svg.selectAll('rect')
-    // .data(dlist)
-    // .enter()
-    // .append('rect')
-    // .attr('x', function(d,i) {return x(i);})
-    // .attr('y', function(d,i) {return y(d[1].avgHighMPG);})
-    // .attr('width', x.bandwidth())
-    // .attr('height',function(d,i) {return 600 - y(d[1].avgHighMPG);})
-    // .transition().duration(3000).delay(1000)
-    // .attr('y', function(d,i) {return y(d[1].avgCityMPG);})
-    // .attr('height',function(d,i) {return 600 - y(d[1].avgCityMPG);})
-    // .transition().duration(3000).delay(1000)
-    // .attr('y', function(d,i) {return y(d[1].avgHighMPG);})
-    // .attr('height',function(d,i) {return 600 - y(d[1].avgHighMPG);});
 }   
 </script>
 </body>
