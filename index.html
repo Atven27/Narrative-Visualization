@@ -98,7 +98,7 @@ async function init() {
             y: 450,
             dy: -20,
             dx: 40,
-        }].map(function(d){ d.color = "black"; return d})
+        }].map(function(d){ d.color = "grey"; return d})
 
 
         const makeAnnotations = d3.annotation()
@@ -128,11 +128,14 @@ async function init() {
     // Chart 1 & 2
     var x = d3.scaleBand().domain([0,1,2,3,4,5,6,7]).range([0,1700])
     var y = d3.scaleLinear().domain([10,150]).range([600,0])
-    var dlist = Object.entries(dict);
+    
     
     // Chart 3
     var scatter_x = d3.scaleLinear().domain([10,150]).range([0,1700])
     var scatter_y = d3.scaleLinear().domain([10,150]).range([600,0])
+    var fuel_scale = d3.scaleOrdinal().domain(["Gasoline", "Electricity", "Diesel"]).range(["seagreen", "dodgerblue", "orange"])
+
+    var dlist = Object.entries(dict);
 
     function draw_axis(scene) {
         let x_axis_title;
@@ -309,12 +312,13 @@ async function init() {
             .attr('cx', function(d,i) {return scatter_x(d.AverageCityMPG);})
             .attr('cy', function(d,i) {return scatter_y(d.AverageHighwayMPG);})
             .attr('r', function(d,i) { return Number(d.EngineCylinders) + 5;})
+            .style('fill', function(d,i) { return fuel_scale(d.Fuel);})
             .on("mouseover", function(index, data) {
                 
                 d3.select(this).transition()
                .duration('50')
                .attr('opacity', '.5');
-
+                
                 tooltip.transition()
                 .duration(200)
                 .style("opacity", 0.9);
