@@ -17,9 +17,8 @@
 <button id="scene3_btn">Chart 3</button>
 <span></span>
 <p>Hover over data points to see more information</p>
-<svg width=1800 height=800>
-    
-</svg>
+<svg width=1800 height=800></svg>
+<button id="zoomreset_btn">Reset zoom</button>
 
 <script>
 async function init() {
@@ -72,6 +71,7 @@ async function init() {
                 bgPadding: {"top":0.5,"left":1,"right":1,"bottom":1}
                 
             },
+            color:['seagreen'],
             
             x: 180,
             y: 680,
@@ -98,7 +98,7 @@ async function init() {
             y: 450,
             dy: -20,
             dx: 40,
-        }].map(function(d){ d.color = "grey"; return d})
+        }] //.map(function(d){ d.color = "black"; return d})
 
 
         const makeAnnotations = d3.annotation()
@@ -178,35 +178,9 @@ async function init() {
         .text(y_axis_title);
     }
     
-    function draw_scatter_axis() {
-        d3.select('svg')
-        .append("g")
-        .attr("transform","translate(70,50)")
-        .call(d3.axisLeft(scatter_y).tickFormat(d3.format("~s")));
-        
-        d3.select('svg')
-        .append("g")
-        .attr("transform","translate(70,650)")
-        .call(d3.axisBottom(scatter_x).tickFormat(d3.format("~s")));
+    
 
-        d3.select("svg").append("text")
-        .attr("text-anchor", "end")
-        .attr("x", 1000)
-        .attr("y", 700)
-        .style('fill', 'Black')
-        .style('font-weight', 'bold')
-        .text("Average City MPG")
-
-        d3.select("svg").append("text")
-        .attr("text-anchor", "end")
-        .attr("x", -200)
-        .attr("y", 15)
-        .attr("dy", ".25em")
-        .style('fill', 'Black')
-        .style('font-weight', 'bold')
-        .attr("transform", "rotate(-90)")
-        .text("Average Highway MPG");
-    }
+    
 
     // Define the div for the tooltip
     var tooltip = d3.select("body").append("div")
@@ -305,7 +279,31 @@ async function init() {
                 
         }
         else { 
-            svg.selectAll('circle')
+            
+            // Learned how to zoom from: https://bl.ocks.org/rutgerhofste/5bd5b06f7817f0ff3ba1daa64dee629d
+            var zoom = d3.zoom()
+            .scaleExtent([1,3])
+            .translateExtent([[0, 0], [1800, 800]])
+            .on('zoom', handleZoom);
+
+            function handleZoom(e) {
+                svg.select('g')
+                .attr('transform', e.transform);
+
+                var new_scatter_x = e.transform.rescaleX(scatter_x)
+                var new_scatter_y = e.transform.rescaleY(scatter_y)
+
+                gX.call(xAxis.scale(new_scatter_x));
+                gY.call(yAxis.scale(new_scatter_y));
+            }
+
+            function initZoom() {
+            svg
+            .call(zoom);
+            }
+
+            
+            svg.append('g').selectAll('circle')
             .data(data)
             .enter()
             .append('circle')
@@ -344,7 +342,7 @@ async function init() {
                 .style("opacity", 0);
             });
 
-            svg.append('line')
+            svg.select('g').append('line')
             .style("stroke", "lightgrey")
             .style("stroke-width", 5)
             .style("stroke-dasharray", ("8, 8"))
@@ -353,15 +351,60 @@ async function init() {
             .attr("y1", 600)
             .attr("x2", 1700)
             .attr("y2", 0); 
+
+            var xAxis = d3.axisBottom(scatter_x).tickFormat(d3.format("~s"));
+            var yAxis = d3.axisLeft(scatter_y).tickFormat(d3.format("~s"));
+
+            var gX = d3.select('svg')
+            .append("g")
+            .attr("transform","translate(70,650)")
+            .call(xAxis);
+
+            var gY = d3.select('svg')
+            .append("g")
+            .attr("transform","translate(70,50)")
+            .call(yAxis);
+
+            d3.select("svg").append("text")
+            .attr("text-anchor", "end")
+            .attr("x", 1000)
+            .attr("y", 700)
+            .style('fill', 'Black')
+            .style('font-weight', 'bold')
+            .text("Average City MPG")
+
+            d3.select("svg").append("text")
+            .attr("text-anchor", "end")
+            .attr("x", -200)
+            .attr("y", 15)
+            .attr("dy", ".25em")
+            .style('fill', 'Black')
+            .style('font-weight', 'bold')
+            .attr("transform", "rotate(-90)")
+            .text("Average Highway MPG");
             
-            draw_scatter_axis();
+            svg.append("circle").attr("cx",50).attr("cy",650).attr("r", 8).style("fill", "seagreen")
+            svg.append("circle").attr("cx",50).attr("cy",680).attr("r", 8).style("fill", "orange")
+            svg.append("circle").attr("cx",50).attr("cy",710).attr("r", 8).style("fill", "dodgerblue")
+            svg.append("text").attr("x", 70).attr("y", 655).text("Gasoline").style("font-size", "15px").attr("alignment-baseline","middle")
+            svg.append("text").attr("x", 70).attr("y", 685).text("Diesel").style("font-size", "15px").attr("alignment-baseline","middle")
+            svg.append("text").attr("x", 70).attr("y", 715).text("Electricity").style("font-size", "15px").attr("alignment-baseline","middle")
+                
+            initZoom();
+
+            var resetzoom = d3.select("#zoomreset_btn");
+            resetzoom.on("click", function() {
+                svg.transition().duration(1000)
+                .call(zoom.transform, d3.zoomIdentity.translate(0,0).scale(1));
+            });
         }
+        
         
     }
 
 
 
-    update_scene(3);
+    update_scene(3)
 
 
     var btn1 = d3.select("#scene1_btn");
@@ -378,6 +421,8 @@ async function init() {
     btn3.on("click", function() {
         update_scene(3);
     });
+
+
 
     
 }   
